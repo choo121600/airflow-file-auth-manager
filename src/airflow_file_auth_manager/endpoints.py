@@ -97,7 +97,7 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
             logger.warning("AUDIT: Login attempt with missing credentials")
             if is_form_submission:
                 return RedirectResponse(
-                    url="/auth/file/login?error=Username+and+password+required",
+                    url="/auth/login?error=Username+and+password+required",
                     status_code=303,
                 )
             return JSONResponse(
@@ -112,7 +112,7 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
                           username, request.client.host if request.client else "unknown")
             if is_form_submission:
                 return RedirectResponse(
-                    url="/auth/file/login?error=Invalid+username+or+password",
+                    url="/auth/login?error=Invalid+username+or+password",
                     status_code=303,
                 )
             return JSONResponse(
@@ -167,7 +167,7 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
         logger.info("AUDIT: User logged out (IP: %s)",
                    request.client.host if request.client else "unknown")
 
-        redirect_response = RedirectResponse(url="/auth/file/login", status_code=303)
+        redirect_response = RedirectResponse(url="/auth/login", status_code=303)
         redirect_response.delete_cookie(key="airflow_jwt")
         return redirect_response
 

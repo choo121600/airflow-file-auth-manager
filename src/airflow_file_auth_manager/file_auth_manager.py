@@ -89,14 +89,14 @@ class FileAuthManager(BaseAuthManager[FileUser]):
 
     def get_url_login(self, *, next_url: str | None = None) -> str:
         """Get the login page URL."""
-        url = "/auth/file/login"
+        url = "/auth/login"
         if next_url:
             url = f"{url}?{urlencode({'next': next_url})}"
         return url
 
     def get_url_logout(self) -> str:
         """Get the logout URL."""
-        return "/auth/file/logout"
+        return "/auth/logout"
 
     # =========================================================================
     # Serialization Methods (for JWT)
