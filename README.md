@@ -1,25 +1,33 @@
 # airflow-file-auth-manager
 
-YAML 파일 기반 경량 Auth Manager for Apache Airflow 3.x
+A lightweight YAML file-based Auth Manager for Apache Airflow 3.x
 
-## 개요
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Apache Airflow 3.x](https://img.shields.io/badge/airflow-3.x-017cee.svg)](https://airflow.apache.org/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
-LDAP나 외부 인증 서비스 없이 1~3명 소규모 팀을 위한 간단한 파일 기반 인증 시스템입니다.
+## Overview
 
-### 주요 기능
+**airflow-file-auth-manager** provides simple file-based authentication for Apache Airflow 3.x without requiring LDAP or external authentication services. Perfect for small teams of 1-3 people who need basic authentication with role-based access control.
 
-- **bcrypt 해시 비밀번호**: 안전한 비밀번호 저장
-- **3단계 역할 체계**: Admin, Editor, Viewer
-- **JWT 토큰 인증**: 세션 관리
-- **YAML 파일 기반**: 간단한 사용자 관리
+### Key Features
 
-## 설치
+- **Secure Password Storage**: bcrypt hashing with configurable work factor
+- **Three-Tier Role System**: Admin, Editor, and Viewer roles
+- **JWT Token Authentication**: Stateless session management
+- **YAML-Based Configuration**: Simple, human-readable user management
+- **CLI Tools**: Command-line interface for user administration
+- **Modern Login UI**: Clean, responsive login page
+
+## Installation
+
+### From PyPI (coming soon)
 
 ```bash
 pip install airflow-file-auth-manager
 ```
 
-또는 소스에서 설치:
+### From Source
 
 ```bash
 git clone https://github.com/yeonguk/airflow-file-auth-manager.git
@@ -27,25 +35,27 @@ cd airflow-file-auth-manager
 pip install -e .
 ```
 
-## 설정
+## Quick Start
 
-### 1. 사용자 파일 생성
+### 1. Create Users File
 
 ```bash
-# 초기화 및 admin 사용자 생성
-python -m airflow_file_auth_manager.cli init -f /path/to/users.yaml
+# Initialize with an admin user
+python -m airflow_file_auth_manager.cli init \
+    -f /path/to/users.yaml \
+    -e admin@example.com
 
-# 또는 수동으로 사용자 추가
+# Add additional users
 python -m airflow_file_auth_manager.cli add-user \
     -f /path/to/users.yaml \
-    -u admin \
-    -r admin \
-    -e admin@example.com
+    -u developer \
+    -r editor \
+    -e dev@example.com
 ```
 
-### 2. Airflow 설정
+### 2. Configure Airflow
 
-`airflow.cfg`:
+Add to your `airflow.cfg`:
 
 ```ini
 [core]
@@ -55,38 +65,44 @@ auth_manager = airflow_file_auth_manager.FileAuthManager
 users_file = /path/to/users.yaml
 ```
 
-또는 환경 변수:
+Or use environment variables:
 
 ```bash
 export AIRFLOW__CORE__AUTH_MANAGER=airflow_file_auth_manager.FileAuthManager
 export AIRFLOW_FILE_AUTH_USERS_FILE=/path/to/users.yaml
 ```
 
-## 역할 체계
+### 3. Start Airflow
 
-| 역할 | 권한 |
-|------|------|
-| **Admin** | 전체 권한 (Connection, Variable, Config 수정 포함) |
-| **Editor** | DAG 실행/관리, 읽기 전체 |
-| **Viewer** | 읽기 전용 |
+```bash
+airflow standalone
+# or
+astro dev start
+```
 
-### 상세 권한
+## Role-Based Access Control
 
-| 리소스 | Viewer | Editor | Admin |
-|--------|--------|--------|-------|
-| DAG 조회 | ✅ | ✅ | ✅ |
-| DAG 실행/관리 | ❌ | ✅ | ✅ |
-| Connection 조회 | ✅ | ✅ | ✅ |
-| Connection 수정 | ❌ | ❌ | ✅ |
-| Variable 조회 | ✅ | ✅ | ✅ |
-| Variable 수정 | ❌ | ❌ | ✅ |
-| Pool 조회 | ✅ | ✅ | ✅ |
-| Pool 수정 | ❌ | ❌ | ✅ |
-| Configuration | ✅ (읽기) | ✅ (읽기) | ✅ |
+| Role | Description |
+|------|-------------|
+| **Admin** | Full access including Connection, Variable, Pool, and Configuration management |
+| **Editor** | DAG execution and management, read access to all resources |
+| **Viewer** | Read-only access to all resources |
 
-## 사용자 파일 형식
+### Permission Matrix
 
-`users.yaml`:
+| Resource | Viewer | Editor | Admin |
+|----------|--------|--------|-------|
+| DAGs (view) | ✅ | ✅ | ✅ |
+| DAGs (trigger/manage) | ❌ | ✅ | ✅ |
+| Connections (view) | ✅ | ✅ | ✅ |
+| Connections (modify) | ❌ | ❌ | ✅ |
+| Variables (view) | ✅ | ✅ | ✅ |
+| Variables (modify) | ❌ | ❌ | ✅ |
+| Pools (view) | ✅ | ✅ | ✅ |
+| Pools (modify) | ❌ | ❌ | ✅ |
+| Configuration | ✅ (read) | ✅ (read) | ✅ |
+
+## Users File Format
 
 ```yaml
 version: "1.0"
@@ -105,16 +121,26 @@ users:
     email: dev@example.com
     active: true
 
-  - username: viewer
+  - username: analyst
     password_hash: "$2b$12$..."
     role: viewer
-    email: viewer@example.com
+    email: analyst@example.com
     active: true
 ```
 
-## CLI 명령어
+## CLI Reference
 
-### 사용자 추가
+### Initialize Users File
+
+```bash
+python -m airflow_file_auth_manager.cli init \
+    -f users.yaml \
+    [-p password] \
+    [-e email] \
+    [--force]
+```
+
+### Add User
 
 ```bash
 python -m airflow_file_auth_manager.cli add-user \
@@ -127,60 +153,50 @@ python -m airflow_file_auth_manager.cli add-user \
     [--lastname "Last"]
 ```
 
-### 사용자 수정
+### Update User
 
 ```bash
 python -m airflow_file_auth_manager.cli update-user \
     -f users.yaml \
     -u username \
-    [-p]  # 비밀번호 변경 (대화형 입력)
+    [-p]  # Prompt for new password
     [-r role] \
     [-e email] \
     [--active true|false]
 ```
 
-### 사용자 삭제
+### Delete User
 
 ```bash
 python -m airflow_file_auth_manager.cli delete-user \
     -f users.yaml \
     -u username \
-    [-y]  # 확인 건너뛰기
+    [-y]  # Skip confirmation
 ```
 
-### 사용자 목록
+### List Users
 
 ```bash
 python -m airflow_file_auth_manager.cli list-users -f users.yaml
 ```
 
-### 비밀번호 해시 생성
+### Generate Password Hash
 
 ```bash
 python -m airflow_file_auth_manager.cli hash-password [-p password]
 ```
 
-### 초기화
+## API Authentication
 
-```bash
-python -m airflow_file_auth_manager.cli init \
-    -f users.yaml \
-    [-p admin_password] \
-    [-e admin@email.com] \
-    [--force]
-```
-
-## API 인증
-
-### 토큰 발급
+### Obtain Token
 
 ```bash
 curl -X POST http://localhost:8080/auth/file/token \
     -H "Content-Type: application/json" \
-    -d '{"username": "admin", "password": "secret"}'
+    -d '{"username": "admin", "password": "your_password"}'
 ```
 
-응답:
+Response:
 
 ```json
 {
@@ -190,36 +206,125 @@ curl -X POST http://localhost:8080/auth/file/token \
 }
 ```
 
-### API 요청
+### Use Token
 
 ```bash
 curl http://localhost:8080/api/v1/dags \
     -H "Authorization: Bearer eyJ..."
 ```
 
-## 개발
+## Configuration Options
 
-### 테스트 실행
+### airflow.cfg
+
+```ini
+[file_auth_manager]
+# Path to users YAML file
+users_file = /opt/airflow/users.yaml
+
+[api_auth]
+# JWT token expiration in seconds (default: 36000 = 10 hours)
+jwt_expiration_seconds = 36000
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `AIRFLOW_FILE_AUTH_USERS_FILE` | Path to users YAML file |
+| `AIRFLOW__FILE_AUTH_MANAGER__USERS_FILE` | Alternative config path |
+
+## Security Considerations
+
+1. **Protect the users file**: Set appropriate permissions (`chmod 600 users.yaml`)
+2. **Use strong passwords**: Enforce password policies in your organization
+3. **Secure file location**: Store outside web-accessible directories
+4. **Regular rotation**: Periodically update passwords
+5. **HTTPS**: Always use HTTPS in production for secure cookie transmission
+
+## Development
+
+### Setup
 
 ```bash
+git clone https://github.com/yeonguk/airflow-file-auth-manager.git
+cd airflow-file-auth-manager
+python -m venv .venv
+source .venv/bin/activate
 pip install -e ".[dev]"
+```
+
+### Run Tests
+
+```bash
 pytest tests/ -v
 ```
 
-### 로컬 테스트 (Astro CLI)
+### Run Tests with Coverage
 
 ```bash
-# report-airflow 프로젝트에서
-pip install -e ../airflow-file-auth-manager
-astro dev start
+pytest tests/ -v --cov=airflow_file_auth_manager --cov-report=html
 ```
 
-## 보안 고려사항
+## Architecture
 
-- 사용자 파일(`users.yaml`)은 적절한 권한으로 보호하세요 (`chmod 600`)
-- 프로덕션에서는 강력한 비밀번호를 사용하세요
-- JWT 토큰 만료 시간을 적절히 설정하세요
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Apache Airflow 3.x                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────┐    ┌─────────────────┐                │
+│  │  FileAuthManager │◄───│  BaseAuthManager │                │
+│  └────────┬────────┘    └─────────────────┘                │
+│           │                                                 │
+│  ┌────────▼────────┐    ┌─────────────────┐                │
+│  │   UserStore     │◄───│   users.yaml    │                │
+│  └────────┬────────┘    └─────────────────┘                │
+│           │                                                 │
+│  ┌────────▼────────┐    ┌─────────────────┐                │
+│  │ FileAuthPolicy  │    │   FastAPI App   │                │
+│  │ (RBAC rules)    │    │ (login/logout)  │                │
+│  └─────────────────┘    └─────────────────┘                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## 라이선스
+## Comparison with Other Auth Managers
 
-Apache License 2.0
+| Feature | File Auth | Simple Auth | FAB Auth | LDAP Auth |
+|---------|-----------|-------------|----------|-----------|
+| External Dependencies | None | None | Database | LDAP Server |
+| Password Storage | bcrypt | Plain text | Database | LDAP |
+| Role System | 3 roles | 4 roles | Flexible | Group-based |
+| User Management | YAML + CLI | Config | Web UI | LDAP Admin |
+| Production Ready | Yes | No | Yes | Yes |
+| Best For | Small teams | Development | Medium teams | Enterprise |
+
+## Troubleshooting
+
+### Common Issues
+
+**"Users file not found"**
+- Ensure the file path is correct and accessible
+- Check file permissions
+
+**"Invalid username or password"**
+- Verify the password hash was generated correctly
+- Check if the user is marked as `active: true`
+
+**"Module not found: airflow"**
+- The CLI works without Airflow for basic operations
+- Install Airflow for full functionality
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Apache Airflow](https://airflow.apache.org/) - The workflow orchestration platform
+- [airflow-ldap-auth-manager](https://github.com/emredjan/airflow-ldap-auth-manager) - Inspiration for the architecture
