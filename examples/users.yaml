@@ -1,0 +1,17 @@
+users:
+- active: true
+  email: admin@example.com
+  password_hash: $2b$12$CBIorGRx2Ib4VZJtLzBSh.texAht6i.A5Q2J7KH81xi/kM2KlaTh2
+  role: admin
+  username: admin
+- active: true
+  email: editor@example.com
+  password_hash: $2b$12$JW6j7lYC3JGYy8oChtjZw.jo8JpIwFR03c6QCAgl/pDlacmvE28JW
+  role: editor
+  username: editor
+- active: true
+  email: viewer@example.com
+  password_hash: $2b$12$LhpDXqwkodtYvClitiFr5.5gxghrsyX3uz8nOG7op/gu.XA9Huaei
+  role: viewer
+  username: viewer
+version: '1.0'
