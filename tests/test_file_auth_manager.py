@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Skip entire module if Airflow 3.x auth module is not available
-pytest.importorskip("airflow.auth.managers.base_auth_manager")
+pytest.importorskip("airflow.api_fastapi.auth.managers.base_auth_manager")
 
 from airflow_file_auth_manager.file_auth_manager import FileAuthManager
 from airflow_file_auth_manager.user import FileUser
@@ -43,19 +43,19 @@ class TestFileAuthManagerUrls:
     def test_get_url_login(self, auth_manager: FileAuthManager) -> None:
         """Should return login URL."""
         url = auth_manager.get_url_login()
-        assert url == "/auth/file/login"
+        assert url == "/auth/login"
 
     def test_get_url_login_with_next(self, auth_manager: FileAuthManager) -> None:
         """Should include next parameter."""
         url = auth_manager.get_url_login(next_url="/dags")
-        assert "/auth/file/login" in url
+        assert "/auth/login" in url
         assert "next=" in url
         assert "%2Fdags" in url or "/dags" in url
 
     def test_get_url_logout(self, auth_manager: FileAuthManager) -> None:
         """Should return logout URL."""
         url = auth_manager.get_url_logout()
-        assert url == "/auth/file/logout"
+        assert url == "/auth/logout"
 
 
 class TestFileAuthManagerSerialization:
@@ -153,14 +153,23 @@ class TestFileAuthManagerMenuFiltering:
 
     def test_filter_menu_items_admin(self, auth_manager: FileAuthManager, admin_user: FileUser) -> None:
         """Admin should see all menu items."""
-        items = [{"name": "DAGs"}, {"name": "Connections"}, {"name": "Variables"}]
+        # Create mock MenuItem objects with name attribute (simulating enum)
+        class MockMenuItem:
+            def __init__(self, name: str):
+                self.name = name
+
+        items = [MockMenuItem("DAGs"), MockMenuItem("Connections"), MockMenuItem("Variables")]
         filtered = auth_manager.filter_authorized_menu_items(items, user=admin_user)
         assert len(filtered) == 3
 
     def test_filter_menu_items_viewer(self, auth_manager: FileAuthManager, viewer_user: FileUser) -> None:
         """Viewer should not see admin-only menus."""
-        items = [{"name": "DAGs"}, {"name": "Connections"}, {"name": "Variables"}]
+        class MockMenuItem:
+            def __init__(self, name: str):
+                self.name = name
+
+        items = [MockMenuItem("DAGs"), MockMenuItem("Connections"), MockMenuItem("Variables")]
         filtered = auth_manager.filter_authorized_menu_items(items, user=viewer_user)
         # Viewer should only see DAGs (Connections and Variables are admin-only)
         assert len(filtered) == 1
-        assert filtered[0]["name"] == "DAGs"
+        assert filtered[0].name == "DAGs"

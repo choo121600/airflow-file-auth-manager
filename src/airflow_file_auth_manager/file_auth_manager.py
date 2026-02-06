@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Sequence
-from urllib.parse import urlencode
 
-from airflow.api_fastapi.auth.managers.base_auth_manager import BaseAuthManager, ResourceMethod
+from airflow.api_fastapi.auth.managers.base_auth_manager import BaseAuthManager, ResourceMethod, MenuItem
 from airflow.configuration import conf
 
 from airflow_file_auth_manager.policy import FileAuthPolicy, Role
@@ -87,9 +86,11 @@ class FileAuthManager(BaseAuthManager[FileUser]):
     # URL Methods
     # =========================================================================
 
-    def get_url_login(self, *, next_url: str | None = None) -> str:
+    def get_url_login(self, **kwargs) -> str:
         """Get the login page URL."""
+        from urllib.parse import urlencode
         url = "/auth/login"
+        next_url = kwargs.get("next_url")
         if next_url:
             url = f"{url}?{urlencode({'next': next_url})}"
         return url
@@ -112,7 +113,7 @@ class FileAuthManager(BaseAuthManager[FileUser]):
             "last_name": user.last_name,
         }
 
-    def deserialize_user(self, data: dict[str, Any]) -> FileUser | None:
+    def deserialize_user(self, token: dict[str, Any]) -> FileUser | None:
         """Deserialize user from JWT token payload.
 
         Security: Always validates against current user store to prevent
@@ -121,7 +122,7 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         Returns:
             FileUser if valid and active, None otherwise.
         """
-        username = data.get("username")
+        username = token.get("username")
         if not username:
             logger.warning("JWT token missing username claim")
             return None
@@ -141,10 +142,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
     # Authorization Methods
     # =========================================================================
 
-    def _get_user_role(self, user: BaseUser | None = None) -> str:
-        """Get role for given user or current user."""
-        if user is None:
-            user = self.get_user()
+    def _get_user_role(self, user: FileUser | None) -> str:
+        """Get role for given user."""
         if user and isinstance(user, FileUser):
             return user.role
         return "viewer"  # Default to most restrictive
@@ -153,8 +152,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         details: ConfigurationDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access configuration."""
         return FileAuthPolicy.is_authorized_configuration(
@@ -167,8 +166,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         details: ConnectionDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access connections."""
         return FileAuthPolicy.is_authorized_connection(
@@ -181,9 +180,9 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         access_entity: DagAccessEntity | None = None,
         details: DagDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access DAGs."""
         return FileAuthPolicy.is_authorized_dag(
@@ -197,8 +196,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         details: AssetDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access assets (datasets)."""
         return FileAuthPolicy.is_authorized_dataset(
@@ -211,36 +210,36 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         details: AssetAliasDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access asset aliases."""
-        # Same policy as assets
         return FileAuthPolicy.is_authorized_dataset(
             method=method,
             user_role=self._get_user_role(user),
+            details=details,
         )
 
     def is_authorized_backfill(
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         details: BackfillDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access backfills."""
-        # Backfills are like DAG runs - editor level
         return FileAuthPolicy.is_authorized_dag(
             method=method,
             user_role=self._get_user_role(user),
+            details=details,
         )
 
     def is_authorized_pool(
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         details: PoolDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access pools."""
         return FileAuthPolicy.is_authorized_pool(
@@ -253,8 +252,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         *,
         method: ResourceMethod,
+        user: FileUser,
         details: VariableDetails | None = None,
-        user: BaseUser | None = None,
     ) -> bool:
         """Check if user is authorized to access variables."""
         return FileAuthPolicy.is_authorized_variable(
@@ -267,7 +266,7 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         *,
         access_view: AccessView,
-        user: BaseUser | None = None,
+        user: FileUser,
     ) -> bool:
         """Check if user is authorized to access a specific view."""
         return FileAuthPolicy.is_authorized_view(
@@ -280,7 +279,7 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         *,
         method: ResourceMethod | str,
         resource_name: str,
-        user: BaseUser | None = None,
+        user: FileUser,
     ) -> bool:
         """Check if user is authorized to access custom views."""
         return FileAuthPolicy.is_authorized_custom_view(
@@ -301,8 +300,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         return all(
             self.is_authorized_connection(
                 method=req["method"],
+                user=req["user"],
                 details=req.get("details"),
-                user=req.get("user"),
             )
             for req in requests
         )
@@ -315,9 +314,9 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         return all(
             self.is_authorized_dag(
                 method=req["method"],
+                user=req["user"],
                 access_entity=req.get("access_entity"),
                 details=req.get("details"),
-                user=req.get("user"),
             )
             for req in requests
         )
@@ -330,8 +329,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         return all(
             self.is_authorized_pool(
                 method=req["method"],
+                user=req["user"],
                 details=req.get("details"),
-                user=req.get("user"),
             )
             for req in requests
         )
@@ -344,8 +343,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         return all(
             self.is_authorized_variable(
                 method=req["method"],
+                user=req["user"],
                 details=req.get("details"),
-                user=req.get("user"),
             )
             for req in requests
         )
@@ -356,15 +355,14 @@ class FileAuthManager(BaseAuthManager[FileUser]):
 
     def filter_authorized_menu_items(
         self,
-        menu_items: list[Any],
-        user: BaseUser | None = None,
-    ) -> list[Any]:
+        menu_items: list[MenuItem],
+        *,
+        user: FileUser,
+    ) -> list[MenuItem]:
         """Filter menu items based on user authorization.
 
         Hides menu items that the user doesn't have permission to access,
         providing a cleaner UX.
-
-        Note: menu_items can be MenuItem enum values or dicts depending on Airflow version.
         """
         user_role = self._get_user_role(user)
 
@@ -379,13 +377,8 @@ class FileAuthManager(BaseAuthManager[FileUser]):
 
         filtered = []
         for item in menu_items:
-            # Handle both MenuItem enum and dict formats
-            if hasattr(item, 'name'):
-                item_name = item.name.lower()  # MenuItem enum
-            elif isinstance(item, dict):
-                item_name = item.get("name", "").lower()
-            else:
-                item_name = str(item).lower()
+            # MenuItem is an enum, get its name
+            item_name = item.name.lower() if hasattr(item, 'name') else str(item).lower()
 
             # Check admin-only menus
             if item_name in admin_only_menus:
