@@ -49,7 +49,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Publish to TestPyPI
-        run: uv publish --index-url https://test.pypi.org/simple/
+        run: uv publish --publish-url https://test.pypi.org/legacy/ dist/*
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
@@ -74,7 +74,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Publish to PyPI
-        run: uv publish
+        run: uv publish dist/*
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
 
