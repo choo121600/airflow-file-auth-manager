@@ -16,7 +16,7 @@ from airflow_file_auth_manager.policy import FileAuthPolicy, Role
 from airflow_file_auth_manager.user import FileUser
 from airflow_file_auth_manager.user_store import UserStore
 
-__version__ = "0.1.0"
+__version__ = "0.1.7"
 
 # FileAuthManager requires Airflow, so import lazily
 try:
