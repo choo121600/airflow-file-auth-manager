@@ -25,7 +25,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-extras --prerelease=allow
 
       - name: Run tests
         run: uv run pytest --cov=src --cov-report=xml
@@ -50,7 +50,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-extras --prerelease=allow
 
       - name: Run ruff check
         run: uv run ruff check src tests
