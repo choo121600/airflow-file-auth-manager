@@ -145,7 +145,7 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
 
             redirect_response = RedirectResponse(url=str(next_url), status_code=303)
             redirect_response.set_cookie(
-                key="airflow_jwt",
+                key="_token",
                 value=token,
                 max_age=jwt_expiration,
                 httponly=True,  # Protect from XSS attacks
@@ -171,7 +171,7 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
                    request.client.host if request.client else "unknown")
 
         redirect_response = RedirectResponse(url="/auth/login", status_code=303)
-        redirect_response.delete_cookie(key="airflow_jwt")
+        redirect_response.delete_cookie(key="_token")
         return redirect_response
 
     return app
