@@ -8,6 +8,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+# Skip entire module if Airflow 3.x auth module is not available
+pytest.importorskip("airflow.auth.managers.base_auth_manager")
+
 from airflow_file_auth_manager.file_auth_manager import FileAuthManager
 from airflow_file_auth_manager.user import FileUser
 
@@ -69,15 +72,21 @@ class TestFileAuthManagerSerialization:
         """Should deserialize to existing user."""
         data = {"username": "admin", "role": "admin"}
         user = auth_manager.deserialize_user(data)
+        assert user is not None
         assert user.username == "admin"
         assert user.email == "admin@example.com"
 
     def test_deserialize_user_not_found(self, auth_manager: FileAuthManager) -> None:
-        """Should create minimal user if not found."""
+        """Should return None for unknown user (security fix)."""
         data = {"username": "unknown", "role": "viewer"}
         user = auth_manager.deserialize_user(data)
-        assert user.username == "unknown"
-        assert user.role == "viewer"
+        assert user is None
+
+    def test_deserialize_user_inactive(self, auth_manager: FileAuthManager) -> None:
+        """Should return None for inactive user."""
+        data = {"username": "inactive", "role": "viewer"}
+        user = auth_manager.deserialize_user(data)
+        assert user is None
 
 
 class TestFileAuthManagerAuthorization:
@@ -142,8 +151,16 @@ class TestFileAuthManagerBatchAuthorization:
 class TestFileAuthManagerMenuFiltering:
     """Tests for menu filtering."""
 
-    def test_filter_menu_items_returns_all(self, auth_manager: FileAuthManager, viewer_user: FileUser) -> None:
-        """Should return all menu items (enforcement at endpoint level)."""
-        items = [{"name": "DAGs"}, {"name": "Admin"}]
+    def test_filter_menu_items_admin(self, auth_manager: FileAuthManager, admin_user: FileUser) -> None:
+        """Admin should see all menu items."""
+        items = [{"name": "DAGs"}, {"name": "Connections"}, {"name": "Variables"}]
+        filtered = auth_manager.filter_authorized_menu_items(items, user=admin_user)
+        assert len(filtered) == 3
+
+    def test_filter_menu_items_viewer(self, auth_manager: FileAuthManager, viewer_user: FileUser) -> None:
+        """Viewer should not see admin-only menus."""
+        items = [{"name": "DAGs"}, {"name": "Connections"}, {"name": "Variables"}]
         filtered = auth_manager.filter_authorized_menu_items(items, user=viewer_user)
-        assert len(filtered) == 2
+        # Viewer should only see DAGs (Connections and Variables are admin-only)
+        assert len(filtered) == 1
+        assert filtered[0]["name"] == "DAGs"
