@@ -7,7 +7,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Sequence
 from urllib.parse import urlencode
 
-from airflow.auth.managers.base_auth_manager import BaseAuthManager, ResourceMethod
+from airflow.api_fastapi.auth.managers.base_auth_manager import BaseAuthManager, ResourceMethod
 from airflow.configuration import conf
 
 from airflow_file_auth_manager.policy import FileAuthPolicy, Role
@@ -17,8 +17,8 @@ from airflow_file_auth_manager.user_store import UserStore
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
-    from airflow.auth.managers.models.base_user import BaseUser
-    from airflow.auth.managers.models.resource_details import (
+    from airflow.api_fastapi.auth.managers.models.base_user import BaseUser
+    from airflow.api_fastapi.auth.managers.models.resource_details import (
         AccessView,
         AssetAliasDetails,
         AssetDetails,

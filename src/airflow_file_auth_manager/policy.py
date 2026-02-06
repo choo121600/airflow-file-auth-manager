@@ -6,13 +6,13 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from airflow.auth.managers.models.resource_details import (
+    from airflow.api_fastapi.auth.managers.models.resource_details import (
         AccessView,
+        AssetDetails,
         ConfigurationDetails,
         ConnectionDetails,
         DagAccessEntity,
         DagDetails,
-        DatasetDetails,
         PoolDetails,
         VariableDetails,
     )
@@ -127,7 +127,7 @@ class FileAuthPolicy:
         *,
         method: str,
         user_role: str,
-        details: DatasetDetails | None = None,
+        details: AssetDetails | None = None,
     ) -> bool:
         """Check if user can access datasets."""
         if method in cls.READ_ONLY_METHODS:
