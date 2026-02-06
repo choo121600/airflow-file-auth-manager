@@ -356,34 +356,36 @@ class FileAuthManager(BaseAuthManager[FileUser]):
 
     def filter_authorized_menu_items(
         self,
-        menu_items: list[dict[str, Any]],
+        menu_items: list[Any],
         user: BaseUser | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[Any]:
         """Filter menu items based on user authorization.
 
         Hides menu items that the user doesn't have permission to access,
         providing a cleaner UX.
+
+        Note: menu_items can be MenuItem enum values or dicts depending on Airflow version.
         """
         user_role = self._get_user_role(user)
 
-        # Menu items that require admin role
+        # Menu items that require admin role (case-insensitive)
         admin_only_menus = frozenset({
-            "Connections",
-            "Variables",
-            "Pools",
-            "Configuration",
-            "Admin",
-        })
-
-        # Menu items that require editor role
-        editor_menus = frozenset({
-            "DAGs",
-            "Datasets",
+            "connections",
+            "variables",
+            "pools",
+            "config",
+            "admin",
         })
 
         filtered = []
         for item in menu_items:
-            item_name = item.get("name", "")
+            # Handle both MenuItem enum and dict formats
+            if hasattr(item, 'name'):
+                item_name = item.name.lower()  # MenuItem enum
+            elif isinstance(item, dict):
+                item_name = item.get("name", "").lower()
+            else:
+                item_name = str(item).lower()
 
             # Check admin-only menus
             if item_name in admin_only_menus:
@@ -391,13 +393,7 @@ class FileAuthManager(BaseAuthManager[FileUser]):
                     filtered.append(item)
                 continue
 
-            # Check editor menus (for write operations visibility)
-            if item_name in editor_menus:
-                # All roles can see DAGs/Datasets (read access)
-                filtered.append(item)
-                continue
-
-            # Default: allow all other menu items
+            # Default: allow all other menu items for all roles
             filtered.append(item)
 
         return filtered

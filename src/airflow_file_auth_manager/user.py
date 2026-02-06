@@ -39,6 +39,10 @@ class FileUser:
             return f"{self.first_name} {self.last_name}".strip()
         return self.username
 
+    def get_id(self) -> str:
+        """Return the user ID (required by Airflow's BaseUser interface)."""
+        return self.username
+
     def to_dict(self) -> dict:
         """Convert user to dictionary for YAML serialization."""
         data = {
