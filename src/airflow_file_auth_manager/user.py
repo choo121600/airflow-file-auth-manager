@@ -43,6 +43,10 @@ class FileUser:
         """Return the user ID (required by Airflow's BaseUser interface)."""
         return self.username
 
+    def get_name(self) -> str:
+        """Return the user name (required by Airflow's BaseUser interface)."""
+        return self.display_name
+
     def to_dict(self) -> dict:
         """Convert user to dictionary for YAML serialization."""
         data = {
