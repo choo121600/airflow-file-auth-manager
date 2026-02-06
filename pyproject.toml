@@ -36,8 +36,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yeonguk/airflow-file-auth-manager"
-Repository = "https://github.com/yeonguk/airflow-file-auth-manager"
+Homepage = "https://github.com/choo121600/airflow-file-auth-manager"
+Repository = "https://github.com/choo121600/airflow-file-auth-manager"
+Documentation = "https://github.com/choo121600/airflow-file-auth-manager#readme"
+Issues = "https://github.com/choo121600/airflow-file-auth-manager/issues"
+Changelog = "https://github.com/choo121600/airflow-file-auth-manager/releases"
 
 [project.entry-points."airflow.auth.manager"]
 file_auth_manager = "airflow_file_auth_manager:FileAuthManager"

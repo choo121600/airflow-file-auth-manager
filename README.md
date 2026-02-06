@@ -2,9 +2,11 @@
 
 A lightweight YAML file-based Auth Manager for Apache Airflow 3.x
 
+[![PyPI version](https://badge.fury.io/py/airflow-file-auth-manager.svg)](https://pypi.org/project/airflow-file-auth-manager/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Apache Airflow 3.x](https://img.shields.io/badge/airflow-3.x-017cee.svg)](https://airflow.apache.org/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
+[![CI](https://github.com/choo121600/airflow-file-auth-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/choo121600/airflow-file-auth-manager/actions/workflows/ci.yml)
 
 ## Overview
 
@@ -21,7 +23,7 @@ A lightweight YAML file-based Auth Manager for Apache Airflow 3.x
 
 ## Installation
 
-### From PyPI (coming soon)
+### From PyPI
 
 ```bash
 pip install airflow-file-auth-manager
@@ -30,7 +32,7 @@ pip install airflow-file-auth-manager
 ### From Source
 
 ```bash
-git clone https://github.com/yeonguk/airflow-file-auth-manager.git
+git clone https://github.com/choo121600/airflow-file-auth-manager.git
 cd airflow-file-auth-manager
 pip install -e .
 ```
