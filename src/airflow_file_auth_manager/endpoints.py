@@ -87,10 +87,11 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
                 body = await request.json()
                 username = body.get("username")
                 password = body.get("password")
-            except Exception:
+            except Exception as e:
+                logger.error("Failed to parse JSON body: %s", e)
                 return JSONResponse(
                     status_code=400,
-                    content={"error": "Invalid JSON body"},
+                    content={"error": f"Invalid JSON body: {e}"},
                 )
         elif is_form_submission:
             form_data = await request.form()
