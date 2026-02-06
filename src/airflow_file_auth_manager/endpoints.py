@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING
 
-from fastapi import FastAPI, Form, Request, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
@@ -66,8 +66,6 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
     async def create_token(
         request: Request,
         response: Response,
-        username: Annotated[str | None, Form()] = None,
-        password: Annotated[str | None, Form()] = None,
     ) -> Response:
         """Authenticate user and create JWT token.
 
@@ -77,9 +75,12 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
         - Browser sessions: HttpOnly cookies (protected from XSS)
         - API clients: Bearer tokens in response body (use Authorization header)
         """
-        # Handle JSON request
+        # Handle request based on content type
         content_type = request.headers.get("content-type", "")
         is_form_submission = "application/x-www-form-urlencoded" in content_type
+        username: str | None = None
+        password: str | None = None
+        form_data = None
 
         if "application/json" in content_type:
             try:
@@ -91,6 +92,10 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
                     status_code=400,
                     content={"error": "Invalid JSON body"},
                 )
+        elif is_form_submission:
+            form_data = await request.form()
+            username = form_data.get("username")
+            password = form_data.get("password")
 
         # Validate input
         if not username or not password:
@@ -120,19 +125,16 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
                 content={"error": "Invalid username or password"},
             )
 
-        # Create JWT token
-        from airflow.api_fastapi.auth.tokens import create_jwt_token
-
-        token_payload = auth_manager.serialize_user(user)
-        token = create_jwt_token(token_payload, expiration_seconds=jwt_expiration)
+        # Create JWT token using auth manager's method
+        token = auth_manager.generate_jwt(user, expiration_time_in_seconds=jwt_expiration)
 
         logger.info("AUDIT: User logged in: %s (IP: %s)",
                    username, request.client.host if request.client else "unknown")
 
         # Form submission - set HttpOnly cookie and redirect
         if is_form_submission:
-            form_data = await request.form()
-            next_url = form_data.get("next", "/")
+            # form_data was already read above
+            next_url = form_data.get("next", "/") if form_data else "/"
 
             # Detect if using HTTPS
             is_secure = (
