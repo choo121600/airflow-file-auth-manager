@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from airflow.auth.managers.base_auth_manager import BaseAuthManager, ResourceMethod
 from airflow.configuration import conf
 
-from airflow_file_auth_manager.policy import FileAuthPolicy
+from airflow_file_auth_manager.policy import FileAuthPolicy, Role
 from airflow_file_auth_manager.user import FileUser
 from airflow_file_auth_manager.user_store import UserStore
 
@@ -112,22 +112,30 @@ class FileAuthManager(BaseAuthManager[FileUser]):
             "last_name": user.last_name,
         }
 
-    def deserialize_user(self, data: dict[str, Any]) -> FileUser:
-        """Deserialize user from JWT token payload."""
-        # Look up the actual user to get the full data
-        user = self.user_store.get_user(data["username"])
-        if user and user.is_active:
-            return user
-        # Fallback: create a minimal user from token data
-        # Note: password_hash is not needed for deserialized users
-        return FileUser(
-            username=data["username"],
-            password_hash="",  # Not needed after deserialization
-            role=data.get("role", "viewer"),
-            email=data.get("email", ""),
-            first_name=data.get("first_name", ""),
-            last_name=data.get("last_name", ""),
-        )
+    def deserialize_user(self, data: dict[str, Any]) -> FileUser | None:
+        """Deserialize user from JWT token payload.
+
+        Security: Always validates against current user store to prevent
+        privilege escalation via token manipulation.
+
+        Returns:
+            FileUser if valid and active, None otherwise.
+        """
+        username = data.get("username")
+        if not username:
+            logger.warning("JWT token missing username claim")
+            return None
+
+        user = self.user_store.get_user(username)
+        if not user:
+            logger.warning("User from JWT not found in store: %s", username)
+            return None
+
+        if not user.is_active:
+            logger.warning("User from JWT is inactive: %s", username)
+            return None
+
+        return user
 
     # =========================================================================
     # Authorization Methods
@@ -351,9 +359,48 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         menu_items: list[dict[str, Any]],
         user: BaseUser | None = None,
     ) -> list[dict[str, Any]]:
-        """Filter menu items based on user authorization."""
-        # Return all menu items; authorization enforced at endpoint level
-        return menu_items
+        """Filter menu items based on user authorization.
+
+        Hides menu items that the user doesn't have permission to access,
+        providing a cleaner UX.
+        """
+        user_role = self._get_user_role(user)
+
+        # Menu items that require admin role
+        admin_only_menus = frozenset({
+            "Connections",
+            "Variables",
+            "Pools",
+            "Configuration",
+            "Admin",
+        })
+
+        # Menu items that require editor role
+        editor_menus = frozenset({
+            "DAGs",
+            "Datasets",
+        })
+
+        filtered = []
+        for item in menu_items:
+            item_name = item.get("name", "")
+
+            # Check admin-only menus
+            if item_name in admin_only_menus:
+                if FileAuthPolicy.has_minimum_role(user_role, Role.ADMIN):
+                    filtered.append(item)
+                continue
+
+            # Check editor menus (for write operations visibility)
+            if item_name in editor_menus:
+                # All roles can see DAGs/Datasets (read access)
+                filtered.append(item)
+                continue
+
+            # Default: allow all other menu items
+            filtered.append(item)
+
+        return filtered
 
     # =========================================================================
     # FastAPI Integration

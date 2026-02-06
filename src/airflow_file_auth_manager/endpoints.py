@@ -72,9 +72,15 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
         """Authenticate user and create JWT token.
 
         Supports both form submission (browser) and JSON API requests.
+
+        Security features:
+        - Browser sessions: HttpOnly cookies (protected from XSS)
+        - API clients: Bearer tokens in response body (use Authorization header)
         """
         # Handle JSON request
         content_type = request.headers.get("content-type", "")
+        is_form_submission = "application/x-www-form-urlencoded" in content_type
+
         if "application/json" in content_type:
             try:
                 body = await request.json()
@@ -88,8 +94,8 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
 
         # Validate input
         if not username or not password:
-            # Form submission - redirect back to login with error
-            if "application/x-www-form-urlencoded" in content_type:
+            logger.warning("AUDIT: Login attempt with missing credentials")
+            if is_form_submission:
                 return RedirectResponse(
                     url="/auth/file/login?error=Username+and+password+required",
                     status_code=303,
@@ -102,8 +108,9 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
         # Authenticate user
         user = auth_manager.user_store.authenticate(username, password)
         if not user:
-            logger.warning("Failed login attempt for user: %s", username)
-            if "application/x-www-form-urlencoded" in content_type:
+            logger.warning("AUDIT: Failed login attempt for user: %s (IP: %s)",
+                          username, request.client.host if request.client else "unknown")
+            if is_form_submission:
                 return RedirectResponse(
                     url="/auth/file/login?error=Invalid+username+or+password",
                     status_code=303,
@@ -119,29 +126,33 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
         token_payload = auth_manager.serialize_user(user)
         token = create_jwt_token(token_payload, expiration_seconds=jwt_expiration)
 
-        logger.info("User logged in: %s", username)
+        logger.info("AUDIT: User logged in: %s (IP: %s)",
+                   username, request.client.host if request.client else "unknown")
 
-        # Form submission - set cookie and redirect
-        if "application/x-www-form-urlencoded" in content_type:
-            # Get next URL from form or default to home
+        # Form submission - set HttpOnly cookie and redirect
+        if is_form_submission:
             form_data = await request.form()
             next_url = form_data.get("next", "/")
 
             # Detect if using HTTPS
-            is_secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+            is_secure = (
+                request.url.scheme == "https"
+                or request.headers.get("x-forwarded-proto") == "https"
+            )
 
             redirect_response = RedirectResponse(url=str(next_url), status_code=303)
             redirect_response.set_cookie(
                 key="airflow_jwt",
                 value=token,
                 max_age=jwt_expiration,
-                httponly=False,  # Allow JS access for API calls
+                httponly=True,  # Protect from XSS attacks
                 secure=is_secure,
                 samesite="lax",
             )
             return redirect_response
 
-        # JSON API - return token
+        # JSON API - return token in response body
+        # Client should use this token in Authorization header: "Bearer <token>"
         return JSONResponse(
             content={
                 "access_token": token,
@@ -153,9 +164,11 @@ def create_auth_app(auth_manager: FileAuthManager) -> FastAPI:
     @app.get("/logout")
     async def logout(request: Request) -> RedirectResponse:
         """Log out user by clearing JWT cookie."""
+        logger.info("AUDIT: User logged out (IP: %s)",
+                   request.client.host if request.client else "unknown")
+
         redirect_response = RedirectResponse(url="/auth/file/login", status_code=303)
         redirect_response.delete_cookie(key="airflow_jwt")
-        logger.info("User logged out")
         return redirect_response
 
     return app

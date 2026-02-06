@@ -6,7 +6,12 @@ A lightweight YAML file-based authentication manager that supports:
 - JWT token-based session management
 """
 
-from airflow_file_auth_manager.password import hash_password, verify_password
+from airflow_file_auth_manager.password import (
+    PasswordPolicyError,
+    hash_password,
+    validate_password,
+    verify_password,
+)
 from airflow_file_auth_manager.policy import FileAuthPolicy, Role
 from airflow_file_auth_manager.user import FileUser
 from airflow_file_auth_manager.user_store import UserStore
@@ -23,8 +28,10 @@ __all__ = [
     "FileAuthManager",
     "FileAuthPolicy",
     "FileUser",
+    "PasswordPolicyError",
     "Role",
     "UserStore",
     "hash_password",
+    "validate_password",
     "verify_password",
 ]

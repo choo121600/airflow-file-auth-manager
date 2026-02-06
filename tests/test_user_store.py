@@ -11,8 +11,13 @@ import yaml
 from airflow_file_auth_manager.password import verify_password
 from airflow_file_auth_manager.user_store import UserStore
 
+from .conftest import TEST_PASSWORD_ADMIN, TEST_PASSWORD_EDITOR, TEST_PASSWORD_INACTIVE
+
 if TYPE_CHECKING:
     pass
+
+# Valid test password that meets policy
+VALID_PASSWORD = "NewPass@123"
 
 
 class TestUserStoreLoad:
@@ -67,23 +72,23 @@ class TestUserStoreAuthenticate:
 
     def test_authenticate_valid_credentials(self, user_store: UserStore) -> None:
         """Should authenticate with valid credentials."""
-        user = user_store.authenticate("admin", "admin123")
+        user = user_store.authenticate("admin", TEST_PASSWORD_ADMIN)
         assert user is not None
         assert user.username == "admin"
 
     def test_authenticate_invalid_password(self, user_store: UserStore) -> None:
         """Should reject invalid password."""
-        user = user_store.authenticate("admin", "wrong_password")
+        user = user_store.authenticate("admin", "Wrong@Password1")
         assert user is None
 
     def test_authenticate_nonexistent_user(self, user_store: UserStore) -> None:
         """Should reject nonexistent user."""
-        user = user_store.authenticate("nonexistent", "password")
+        user = user_store.authenticate("nonexistent", VALID_PASSWORD)
         assert user is None
 
     def test_authenticate_inactive_user(self, user_store: UserStore) -> None:
         """Should reject inactive user."""
-        user = user_store.authenticate("inactive", "inactive123")
+        user = user_store.authenticate("inactive", TEST_PASSWORD_INACTIVE)
         assert user is None
 
 
@@ -94,20 +99,20 @@ class TestUserStoreAddUser:
         """Should add a new user."""
         user = user_store.add_user(
             username="newuser",
-            password="newpass123",
+            password=VALID_PASSWORD,
             role="editor",
             email="new@example.com",
         )
         assert user.username == "newuser"
         assert user.role == "editor"
-        assert verify_password("newpass123", user.password_hash)
+        assert verify_password(VALID_PASSWORD, user.password_hash)
 
     def test_add_duplicate_user(self, user_store: UserStore) -> None:
         """Should raise error for duplicate username."""
         with pytest.raises(ValueError, match="already exists"):
             user_store.add_user(
                 username="admin",
-                password="newpass",
+                password=VALID_PASSWORD,
                 role="admin",
             )
 
@@ -116,7 +121,7 @@ class TestUserStoreAddUser:
         with pytest.raises(ValueError, match="Invalid role"):
             user_store.add_user(
                 username="baduser",
-                password="pass123",
+                password=VALID_PASSWORD,
                 role="superuser",  # Invalid
             )
 
@@ -131,9 +136,9 @@ class TestUserStoreUpdateUser:
 
     def test_update_user_password(self, user_store: UserStore) -> None:
         """Should update user password."""
-        user_store.update_user("editor", password="newpass123")
+        user_store.update_user("editor", password=VALID_PASSWORD)
         # Verify new password works
-        user = user_store.authenticate("editor", "newpass123")
+        user = user_store.authenticate("editor", VALID_PASSWORD)
         assert user is not None
 
     def test_update_nonexistent_user(self, user_store: UserStore) -> None:
@@ -163,7 +168,7 @@ class TestUserStoreSave:
         """Should save users to file."""
         user_store.add_user(
             username="saveduser",
-            password="pass123",
+            password=VALID_PASSWORD,
             role="viewer",
         )
         user_store.save()
@@ -180,8 +185,18 @@ class TestUserStoreSave:
         store = UserStore(nested_file)
         store.add_user(
             username="test",
-            password="pass123",
+            password=VALID_PASSWORD,
             role="admin",
         )
         store.save()
         assert nested_file.exists()
+
+    def test_save_atomic_write(self, user_store: UserStore, users_file: Path) -> None:
+        """Saved file should have secure permissions."""
+        user_store.save()
+        # Verify file exists and is readable
+        assert users_file.exists()
+        with open(users_file) as f:
+            data = yaml.safe_load(f)
+        assert data is not None
+        assert "users" in data

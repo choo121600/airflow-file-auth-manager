@@ -16,6 +16,14 @@ from airflow_file_auth_manager.user_store import UserStore
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+# Test password that meets policy requirements
+# (8+ chars, uppercase, lowercase, digit, special char)
+TEST_PASSWORD = "Test@123"
+TEST_PASSWORD_ADMIN = "Admin@123"
+TEST_PASSWORD_EDITOR = "Editor@123"
+TEST_PASSWORD_VIEWER = "Viewer@123"
+TEST_PASSWORD_INACTIVE = "Inactive@123"
+
 
 @pytest.fixture
 def temp_dir() -> Generator[Path, None, None]:
@@ -32,28 +40,28 @@ def sample_users_data() -> dict:
         "users": [
             {
                 "username": "admin",
-                "password_hash": hash_password("admin123"),
+                "password_hash": hash_password(TEST_PASSWORD_ADMIN),
                 "role": "admin",
                 "email": "admin@example.com",
                 "active": True,
             },
             {
                 "username": "editor",
-                "password_hash": hash_password("editor123"),
+                "password_hash": hash_password(TEST_PASSWORD_EDITOR),
                 "role": "editor",
                 "email": "editor@example.com",
                 "active": True,
             },
             {
                 "username": "viewer",
-                "password_hash": hash_password("viewer123"),
+                "password_hash": hash_password(TEST_PASSWORD_VIEWER),
                 "role": "viewer",
                 "email": "viewer@example.com",
                 "active": True,
             },
             {
                 "username": "inactive",
-                "password_hash": hash_password("inactive123"),
+                "password_hash": hash_password(TEST_PASSWORD_INACTIVE),
                 "role": "viewer",
                 "email": "inactive@example.com",
                 "active": False,
@@ -82,7 +90,7 @@ def admin_user() -> FileUser:
     """Create an admin user."""
     return FileUser(
         username="admin",
-        password_hash=hash_password("admin123"),
+        password_hash=hash_password(TEST_PASSWORD_ADMIN),
         role="admin",
         email="admin@example.com",
     )
@@ -93,7 +101,7 @@ def editor_user() -> FileUser:
     """Create an editor user."""
     return FileUser(
         username="editor",
-        password_hash=hash_password("editor123"),
+        password_hash=hash_password(TEST_PASSWORD_EDITOR),
         role="editor",
         email="editor@example.com",
     )
@@ -104,7 +112,7 @@ def viewer_user() -> FileUser:
     """Create a viewer user."""
     return FileUser(
         username="viewer",
-        password_hash=hash_password("viewer123"),
+        password_hash=hash_password(TEST_PASSWORD_VIEWER),
         role="viewer",
         email="viewer@example.com",
     )
