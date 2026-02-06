@@ -236,10 +236,28 @@ jwt_expiration_seconds = 36000
 | `AIRFLOW_FILE_AUTH_USERS_FILE` | Path to users YAML file |
 | `AIRFLOW__FILE_AUTH_MANAGER__USERS_FILE` | Alternative config path |
 
+## Password Policy
+
+Passwords must meet the following requirements:
+
+| Requirement | Description |
+|-------------|-------------|
+| Minimum length | 8 characters |
+| Maximum length | 128 characters |
+| Uppercase | At least 1 uppercase letter (A-Z) |
+| Lowercase | At least 1 lowercase letter (a-z) |
+| Digit | At least 1 number (0-9) |
+| Special character | At least 1 special character (`!@#$%^&*(),.?":{}|<>_-+=[];'/\`~`) |
+
+Example valid passwords:
+- `MyP@ssw0rd`
+- `Admin123!`
+- `Secure#Pass99`
+
 ## Security Considerations
 
 1. **Protect the users file**: Set appropriate permissions (`chmod 600 users.yaml`)
-2. **Use strong passwords**: Enforce password policies in your organization
+2. **Use strong passwords**: All passwords are validated against the policy above
 3. **Secure file location**: Store outside web-accessible directories
 4. **Regular rotation**: Periodically update passwords
 5. **HTTPS**: Always use HTTPS in production for secure cookie transmission
