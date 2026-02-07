@@ -116,7 +116,7 @@ class FileAuthPolicy:
         access_entity: DagAccessEntity | None = None,
         details: DagDetails | None = None,
     ) -> bool:
-        """Check if user can access DAGs."""
+        """Check if user can access Dags."""
         if method in cls.READ_ONLY_METHODS:
             return cls.has_minimum_role(user_role, Role.VIEWER)
         return cls.has_minimum_role(user_role, Role.EDITOR)

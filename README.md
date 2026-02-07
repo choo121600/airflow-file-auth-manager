@@ -87,15 +87,15 @@ astro dev start
 | Role | Description |
 |------|-------------|
 | **Admin** | Full access including Connection, Variable, Pool, and Configuration management |
-| **Editor** | DAG execution and management, read access to all resources |
+| **Editor** | Dag execution and management, read access to all resources |
 | **Viewer** | Read-only access to all resources |
 
 ### Permission Matrix
 
 | Resource | Viewer | Editor | Admin |
 |----------|--------|--------|-------|
-| DAGs (view) | ✅ | ✅ | ✅ |
-| DAGs (trigger/manage) | ❌ | ✅ | ✅ |
+| Dags (view) | ✅ | ✅ | ✅ |
+| Dags (trigger/manage) | ❌ | ✅ | ✅ |
 | Connections (view) | ✅ | ✅ | ✅ |
 | Connections (modify) | ❌ | ❌ | ✅ |
 | Variables (view) | ✅ | ✅ | ✅ |

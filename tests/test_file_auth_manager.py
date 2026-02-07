@@ -111,11 +111,11 @@ class TestFileAuthManagerAuthorization:
         assert not auth_manager.is_authorized_connection(method="POST", user=editor_user)
 
     def test_is_authorized_dag_editor(self, auth_manager: FileAuthManager, editor_user: FileUser) -> None:
-        """Editor should be authorized for DAGs."""
+        """Editor should be authorized for Dags."""
         assert auth_manager.is_authorized_dag(method="POST", user=editor_user)
 
     def test_is_authorized_dag_viewer(self, auth_manager: FileAuthManager, viewer_user: FileUser) -> None:
-        """Viewer should only read DAGs."""
+        """Viewer should only read Dags."""
         assert auth_manager.is_authorized_dag(method="GET", user=viewer_user)
         assert not auth_manager.is_authorized_dag(method="POST", user=viewer_user)
 
@@ -132,7 +132,7 @@ class TestFileAuthManagerBatchAuthorization:
     """Tests for batch authorization methods."""
 
     def test_batch_is_authorized_dag(self, auth_manager: FileAuthManager, editor_user: FileUser) -> None:
-        """Batch DAG authorization should work."""
+        """Batch Dag authorization should work."""
         requests = [
             {"method": "GET", "user": editor_user},
             {"method": "POST", "user": editor_user},
@@ -158,7 +158,7 @@ class TestFileAuthManagerMenuFiltering:
             def __init__(self, name: str):
                 self.name = name
 
-        items = [MockMenuItem("DAGs"), MockMenuItem("Connections"), MockMenuItem("Variables")]
+        items = [MockMenuItem("Dags"), MockMenuItem("Connections"), MockMenuItem("Variables")]
         filtered = auth_manager.filter_authorized_menu_items(items, user=admin_user)
         assert len(filtered) == 3
 
@@ -168,8 +168,8 @@ class TestFileAuthManagerMenuFiltering:
             def __init__(self, name: str):
                 self.name = name
 
-        items = [MockMenuItem("DAGs"), MockMenuItem("Connections"), MockMenuItem("Variables")]
+        items = [MockMenuItem("Dags"), MockMenuItem("Connections"), MockMenuItem("Variables")]
         filtered = auth_manager.filter_authorized_menu_items(items, user=viewer_user)
-        # Viewer should only see DAGs (Connections and Variables are admin-only)
+        # Viewer should only see Dags (Connections and Variables are admin-only)
         assert len(filtered) == 1
-        assert filtered[0].name == "DAGs"
+        assert filtered[0].name == "Dags"

@@ -184,7 +184,7 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         access_entity: DagAccessEntity | None = None,
         details: DagDetails | None = None,
     ) -> bool:
-        """Check if user is authorized to access DAGs."""
+        """Check if user is authorized to access Dags."""
         return FileAuthPolicy.is_authorized_dag(
             method=method,
             user_role=self._get_user_role(user),
@@ -310,7 +310,7 @@ class FileAuthManager(BaseAuthManager[FileUser]):
         self,
         requests: Sequence[dict[str, Any]],
     ) -> bool:
-        """Batch check DAG authorization."""
+        """Batch check Dag authorization."""
         return all(
             self.is_authorized_dag(
                 method=req["method"],

@@ -88,21 +88,21 @@ class TestConnectionAuthorization:
 
 
 class TestDagAuthorization:
-    """Tests for DAG authorization."""
+    """Tests for Dag authorization."""
 
     def test_admin_can_manage_dags(self) -> None:
-        """Admin can fully manage DAGs."""
+        """Admin can fully manage Dags."""
         assert FileAuthPolicy.is_authorized_dag(method="GET", user_role="admin")
         assert FileAuthPolicy.is_authorized_dag(method="POST", user_role="admin")
         assert FileAuthPolicy.is_authorized_dag(method="DELETE", user_role="admin")
 
     def test_editor_can_manage_dags(self) -> None:
-        """Editor can manage DAGs."""
+        """Editor can manage Dags."""
         assert FileAuthPolicy.is_authorized_dag(method="GET", user_role="editor")
         assert FileAuthPolicy.is_authorized_dag(method="POST", user_role="editor")
 
     def test_viewer_can_only_read_dags(self) -> None:
-        """Viewer can only read DAGs."""
+        """Viewer can only read Dags."""
         assert FileAuthPolicy.is_authorized_dag(method="GET", user_role="viewer")
         assert not FileAuthPolicy.is_authorized_dag(method="POST", user_role="viewer")
 

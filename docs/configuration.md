@@ -210,7 +210,7 @@ export AIRFLOW_FILE_AUTH_USERS_FILE=/etc/airflow/users.yaml
 The users file is loaded at startup. To reload without restart:
 
 ```python
-# From within a DAG or Python shell
+# From within a Dag or Python shell
 from airflow_file_auth_manager import UserStore
 store = UserStore("/path/to/users.yaml")
 store.reload()

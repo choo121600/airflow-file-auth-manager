@@ -24,8 +24,8 @@ Higher roles inherit all permissions from lower roles.
 **Purpose:** Read-only monitoring access
 
 Viewers can:
-- View all DAGs and their status
-- View DAG runs and task instances
+- View all Dags and their status
+- View Dag runs and task instances
 - View logs
 - View connections (not secrets)
 - View variables (not sensitive values)
@@ -34,7 +34,7 @@ Viewers can:
 - Access all read-only API endpoints
 
 Viewers cannot:
-- Trigger or manage DAG runs
+- Trigger or manage Dag runs
 - Create, modify, or delete any resources
 
 **Best for:** Stakeholders, on-call engineers, auditors
@@ -42,11 +42,11 @@ Viewers cannot:
 ### Editor
 
 **Level:** 2 (Middle)
-**Purpose:** DAG management and execution
+**Purpose:** Dag management and execution
 
 Editors can do everything Viewers can, plus:
-- Trigger DAG runs
-- Pause/unpause DAGs
+- Trigger Dag runs
+- Pause/unpause Dags
 - Clear task instances
 - Mark tasks as success/failed
 - Manage backfills
@@ -77,27 +77,27 @@ Admins can do everything, including:
 
 ## Permission Matrix
 
-### DAG Permissions
+### Dag Permissions
 
 | Action | Viewer | Editor | Admin |
 |--------|--------|--------|-------|
-| View DAG list | ✅ | ✅ | ✅ |
-| View DAG details | ✅ | ✅ | ✅ |
-| View DAG code | ✅ | ✅ | ✅ |
-| Trigger DAG run | ❌ | ✅ | ✅ |
-| Pause/unpause DAG | ❌ | ✅ | ✅ |
-| Delete DAG | ❌ | ✅ | ✅ |
+| View Dag list | ✅ | ✅ | ✅ |
+| View Dag details | ✅ | ✅ | ✅ |
+| View Dag code | ✅ | ✅ | ✅ |
+| Trigger Dag run | ❌ | ✅ | ✅ |
+| Pause/unpause Dag | ❌ | ✅ | ✅ |
+| Delete Dag | ❌ | ✅ | ✅ |
 
-### DAG Run Permissions
+### Dag Run Permissions
 
 | Action | Viewer | Editor | Admin |
 |--------|--------|--------|-------|
-| View DAG runs | ✅ | ✅ | ✅ |
+| View Dag runs | ✅ | ✅ | ✅ |
 | View run details | ✅ | ✅ | ✅ |
-| Clear DAG run | ❌ | ✅ | ✅ |
+| Clear Dag run | ❌ | ✅ | ✅ |
 | Mark run success | ❌ | ✅ | ✅ |
 | Mark run failed | ❌ | ✅ | ✅ |
-| Delete DAG run | ❌ | ✅ | ✅ |
+| Delete Dag run | ❌ | ✅ | ✅ |
 
 ### Task Instance Permissions
 
@@ -179,7 +179,7 @@ users:
   - username: platform_admin
     role: admin
 
-  # Data engineer - runs and manages DAGs
+  # Data engineer - runs and manages Dags
   - username: data_engineer
     role: editor
 
@@ -222,7 +222,7 @@ from airflow_file_auth_manager.policy import FileAuthPolicy, Role
 class CustomPolicy(FileAuthPolicy):
     @classmethod
     def is_authorized_dag(cls, *, method, user_role, access_entity=None, details=None):
-        # Example: Restrict certain DAGs to admins only
+        # Example: Restrict certain Dags to admins only
         if details and details.id.startswith("admin_"):
             return cls.has_minimum_role(user_role, Role.ADMIN)
         return super().is_authorized_dag(
@@ -233,11 +233,11 @@ class CustomPolicy(FileAuthPolicy):
         )
 ```
 
-### Per-DAG Access Control
+### Per-Dag Access Control
 
-For per-DAG access control (e.g., team-based restrictions), consider:
+For per-Dag access control (e.g., team-based restrictions), consider:
 
-1. Using DAG-level access controls in Airflow 3.x
+1. Using Dag-level access controls in Airflow 3.x
 2. Implementing custom middleware
 3. Using a more flexible auth manager (FAB, LDAP)
 

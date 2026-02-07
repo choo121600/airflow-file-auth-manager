@@ -101,7 +101,7 @@ For browser-based access, the token is automatically stored as a cookie named `a
 
 ## API Request Examples
 
-### List DAGs
+### List Dags
 
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -110,7 +110,7 @@ curl -s http://localhost:8080/api/v1/dags \
     -H "Authorization: Bearer $TOKEN" | jq
 ```
 
-### Trigger DAG Run
+### Trigger Dag Run
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/dags/my_dag/dagRuns \
@@ -122,7 +122,7 @@ curl -X POST http://localhost:8080/api/v1/dags/my_dag/dagRuns \
     }'
 ```
 
-### Get DAG Run Status
+### Get Dag Run Status
 
 ```bash
 curl http://localhost:8080/api/v1/dags/my_dag/dagRuns/my_run_id \
@@ -168,12 +168,12 @@ token = response.json()["access_token"]
 session = requests.Session()
 session.headers.update({"Authorization": f"Bearer {token}"})
 
-# List DAGs
+# List Dags
 dags = session.get(f"{BASE_URL}/api/v1/dags").json()
 for dag in dags["dags"]:
     print(f"{dag['dag_id']}: {dag['is_paused']}")
 
-# Trigger DAG
+# Trigger Dag
 session.post(
     f"{BASE_URL}/api/v1/dags/my_dag/dagRuns",
     json={"logical_date": "2024-01-15T10:00:00Z"}
@@ -198,7 +198,7 @@ async def main():
         # Set auth header
         client.headers.update({"Authorization": f"Bearer {token}"})
 
-        # List DAGs
+        # List Dags
         dags = await client.get("/api/v1/dags")
         print(dags.json())
 
