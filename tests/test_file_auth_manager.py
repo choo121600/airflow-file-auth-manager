@@ -173,3 +173,16 @@ class TestFileAuthManagerMenuFiltering:
         # Viewer should only see Dags (Connections and Variables are admin-only)
         assert len(filtered) == 1
         assert filtered[0].name == "Dags"
+
+
+class TestFileUserBaseUserInterface:
+    """FileUser must provide every method Airflow calls on BaseUser."""
+
+    def test_base_user_methods(self, admin_user: FileUser) -> None:
+        from airflow.api_fastapi.auth.managers.models.base_user import BaseUser
+
+        for name in ("get_id", "get_name", "get_display_name"):
+            if hasattr(BaseUser, name):
+                assert callable(getattr(admin_user, name)), name
+        assert admin_user.get_id() == admin_user.username
+        assert admin_user.get_display_name() == admin_user.display_name
